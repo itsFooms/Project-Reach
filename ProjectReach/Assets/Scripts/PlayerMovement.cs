@@ -9,7 +9,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] float dashBoost = 50f;
     [SerializeField] float dashTime = 2f;
 
-
+    private Animator animator;
     public Rigidbody2D rb;
 
     InputAction inputMovement;
@@ -26,6 +26,7 @@ public class PlayerMovement : MonoBehaviour
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
+        animator = GetComponent<Animator>();
         inputMovement = InputSystem.actions.FindAction("Move");
         inputJump = InputSystem.actions.FindAction("Jump");
         inputDash = InputSystem.actions.FindAction("Sprint");
@@ -69,6 +70,9 @@ public class PlayerMovement : MonoBehaviour
             rb.linearVelocityY = (jumpHeight);
         }
 
+        //animation
+        setAnimation(direction.x);
+
     }
 
     private void OnCollisionEnter2D(Collision2D collision) //empeche le saut et dash a l'infini
@@ -93,5 +97,29 @@ public class PlayerMovement : MonoBehaviour
         isDashing = false;
 
         StopCoroutine(coroutine);
+    }
+
+    private void setAnimation(float moveX)
+    {
+        if (!canJump)
+        {
+            if (rb.linearVelocityY > 0)
+            {
+                animator.Play("Player_jump");
+            }
+            else
+            {
+                animator.Play("Player_fall");
+
+            }
+        }
+        else if (moveX==0) {
+
+            animator.Play("Player_idle");
+        }
+        else if (moveX > 0)
+        {
+            animator.Play("Player_run");
+        }
     }
 }
