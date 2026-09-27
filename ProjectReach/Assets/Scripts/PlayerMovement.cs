@@ -8,6 +8,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] float jumpHeight = 20f;
     [SerializeField] float dashBoost = 50f;
     [SerializeField] float dashTime = 2f;
+    [SerializeField] float climbTime = 4f;
 
     private Animator animator;
     public Rigidbody2D rb;
@@ -15,13 +16,17 @@ public class PlayerMovement : MonoBehaviour
     InputAction inputMovement;
     InputAction inputDash;
     InputAction inputJump;
-   
+    InputAction inputClimb;
+
     Vector2 direction;
     bool canJump = true;
     bool canDash = true;
     bool isDashing = false;
+    bool isGrounded;
+    bool isClimbing;
 
-    Coroutine coroutine;
+    Coroutine timerDash;
+    Coroutine timerHold;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -30,6 +35,7 @@ public class PlayerMovement : MonoBehaviour
         inputMovement = InputSystem.actions.FindAction("Move");
         inputJump = InputSystem.actions.FindAction("Jump");
         inputDash = InputSystem.actions.FindAction("Sprint");
+        inputClimb = InputSystem.actions.FindAction("Grab");
 
         inputMovement.Enable();
         inputJump.Enable();
@@ -53,21 +59,36 @@ public class PlayerMovement : MonoBehaviour
                 rb.linearVelocityX = 0;
             }
 
+            //jump
+            if (inputJump.WasPressedThisFrame() && canJump == true)
+            {
+                rb.linearVelocityY = (jumpHeight);
+            }
+
             //dash
-            if (inputDash.WasPerformedThisFrame() && canDash)
+            if (inputDash.WasPressedThisFrame() && canDash)
             {
                 canDash = false;
                 direction = (direction != Vector2.zero) ? direction : Vector2.right;
 
                 rb.linearVelocity = (dashBoost * direction);
-                coroutine = StartCoroutine(dashTimer());
+                timerDash = StartCoroutine(dashTimer());
             }
-        }
 
-        //jump
-        if (inputJump.WasPressedThisFrame() && canJump == true)
-        {
-            rb.linearVelocityY = (jumpHeight);
+            if (isClimbing && inputMovement.IsPressed() && inputClimb.IsPressed())
+            {
+                direction = inputMovement.ReadValue<Vector2>().normalized;
+                if (!isGrounded)
+                {
+                    rb.linearVelocityY = (direction.y * movementSpeed);
+                }
+                else
+                {
+                    rb.linearVelocityY = (direction.y * movementSpeed) * 2;
+                }
+
+            }
+
         }
 
         //animation
@@ -80,13 +101,33 @@ public class PlayerMovement : MonoBehaviour
         if (collision.gameObject.CompareTag("Ground"))
         {
             canJump = true;
-            canDash =  true;
+            canDash = true;
+            isGrounded = true;
+        }
+
+        if (collision.gameObject.CompareTag("Walls") && inputClimb.WasPressedThisFrame() && isGrounded == false)
+        {
+            rb.gravityScale = 0;
+            isClimbing = true;
+
+            if (timerHold != null)
+            {
+                timerHold = StartCoroutine(holdTimer());
+            }
         }
     }
 
     private void OnCollisionExit2D(Collision2D collision)
     {
-        canJump = false;
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            canJump = false;
+        }
+
+        if (collision.gameObject.CompareTag("Walls"))
+        {
+            rb.gravityScale = 1;
+        }
     }
 
     private IEnumerator dashTimer()
@@ -96,7 +137,16 @@ public class PlayerMovement : MonoBehaviour
         rb.linearVelocity = Vector2.zero;
         isDashing = false;
 
-        StopCoroutine(coroutine);
+        StopCoroutine(timerDash);
+    }
+
+    private IEnumerator holdTimer()
+    {
+        yield return new WaitForSecondsRealtime(climbTime);
+        rb.gravityScale = 1;
+        timerHold = null;
+
+        StopCoroutine(timerHold);
     }
 
     private void setAnimation(float moveX)
@@ -113,7 +163,8 @@ public class PlayerMovement : MonoBehaviour
 
             }
         }
-        else if (moveX==0) {
+        else if (moveX == 0)
+        {
 
             animator.Play("Player_idle");
         }
