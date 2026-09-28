@@ -9,6 +9,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] float dashBoost = 50f;
     [SerializeField] float dashTime = 2f;
     [SerializeField] float climbTime = 4f;
+    [SerializeField] private TrailRenderer trail;
 
     private Animator animator;
     public Rigidbody2D rb;
@@ -24,6 +25,7 @@ public class PlayerMovement : MonoBehaviour
     bool isDashing = false;
     bool isGrounded;
     bool isClimbing;
+    bool isRight = true;
 
     Coroutine timerDash;
     Coroutine timerHold;
@@ -40,6 +42,7 @@ public class PlayerMovement : MonoBehaviour
         inputMovement.Enable();
         inputJump.Enable();
         inputDash.Enable();
+        inputClimb.Enable(); //i felt like thhis could help
 
     }
 
@@ -54,9 +57,10 @@ public class PlayerMovement : MonoBehaviour
                 direction = inputMovement.ReadValue<Vector2>().normalized;
                 rb.linearVelocityX = (direction.x * movementSpeed);
             }
-            else if (!inputMovement.IsPressed())
+            else
             {
                 rb.linearVelocityX = 0;
+                direction = Vector2.zero;
             }
 
             //jump
@@ -92,7 +96,7 @@ public class PlayerMovement : MonoBehaviour
         }
 
         //animation
-        setAnimation(direction.x);
+        setAnimation(direction);
 
     }
 
@@ -133,7 +137,9 @@ public class PlayerMovement : MonoBehaviour
     private IEnumerator dashTimer()
     {
         isDashing = true;
+        trail.emitting = true;
         yield return new WaitForSeconds(dashTime);
+        trail.emitting = false;
         rb.linearVelocity = Vector2.zero;
         isDashing = false;
 
@@ -149,9 +155,39 @@ public class PlayerMovement : MonoBehaviour
         StopCoroutine(timerHold);
     }
 
-    private void setAnimation(float moveX)
+
+
+    //---------------------------ANIMATIONs (made by the goat)--------------------------------------------
+    private void SwitchAnim()
     {
-        if (!canJump)
+        isRight = !isRight;
+        Vector3 localScale = transform.localScale;
+        localScale.x *= -1f;
+        transform.localScale = localScale;
+    }
+    private void setAnimation(Vector2 direction)
+    {
+
+        if (direction.x > 0 && !isRight)
+        {
+            SwitchAnim();
+        }
+        else if (direction.x < 0 && isRight)
+        {
+            SwitchAnim();
+        }
+
+        if (isDashing)
+        {
+            animator.Play("Player_dash");
+
+        }
+        else if (isClimbing)
+        {
+            animator.Play("Player_climb");
+        }
+
+        else if (!canJump)
         {
             if (rb.linearVelocityY > 0)
             {
@@ -163,14 +199,18 @@ public class PlayerMovement : MonoBehaviour
 
             }
         }
-        else if (moveX == 0)
+        else
         {
+            if (direction.x == 0)
+            {
 
-            animator.Play("Player_idle");
+                animator.Play("Player_idle");
+            }
+            else
+            {
+                animator.Play("Player_run");
+            }
         }
-        else if (moveX > 0)
-        {
-            animator.Play("Player_run");
-        }
+        
     }
 }
