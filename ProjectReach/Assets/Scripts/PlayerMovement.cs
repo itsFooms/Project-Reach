@@ -8,6 +8,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] float jumpHeight = 20f;
     [SerializeField] float dashBoost = 50f;
     [SerializeField] float dashTime = 2f;
+    [SerializeField] float climbTime = 4f;
+    [SerializeField] private TrailRenderer trail;
 
     private Animator animator;
     public Rigidbody2D rb;
@@ -15,13 +17,18 @@ public class PlayerMovement : MonoBehaviour
     InputAction inputMovement;
     InputAction inputDash;
     InputAction inputJump;
-   
+    InputAction inputClimb;
+
     Vector2 direction;
     bool canJump = true;
     bool canDash = true;
     bool isDashing = false;
+    bool isGrounded;
+    bool isClimbing;
+    bool isRight = true;
 
-    Coroutine coroutine;
+    Coroutine timerDash;
+    Coroutine timerHold;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -30,10 +37,12 @@ public class PlayerMovement : MonoBehaviour
         inputMovement = InputSystem.actions.FindAction("Move");
         inputJump = InputSystem.actions.FindAction("Jump");
         inputDash = InputSystem.actions.FindAction("Sprint");
+        inputClimb = InputSystem.actions.FindAction("Grab");
 
         inputMovement.Enable();
         inputJump.Enable();
         inputDash.Enable();
+        inputClimb.Enable(); //i felt like thhis could help
 
     }
 
@@ -48,30 +57,46 @@ public class PlayerMovement : MonoBehaviour
                 direction = inputMovement.ReadValue<Vector2>().normalized;
                 rb.linearVelocityX = (direction.x * movementSpeed);
             }
-            else if (!inputMovement.IsPressed())
+            else
             {
                 rb.linearVelocityX = 0;
+                direction = Vector2.zero;
+            }
+
+            //jump
+            if (inputJump.WasPressedThisFrame() && canJump == true)
+            {
+                rb.linearVelocityY = (jumpHeight);
             }
 
             //dash
-            if (inputDash.WasPerformedThisFrame() && canDash)
+            if (inputDash.WasPressedThisFrame() && canDash)
             {
                 canDash = false;
                 direction = (direction != Vector2.zero) ? direction : Vector2.right;
 
                 rb.linearVelocity = (dashBoost * direction);
-                coroutine = StartCoroutine(dashTimer());
+                timerDash = StartCoroutine(dashTimer());
             }
-        }
 
-        //jump
-        if (inputJump.WasPressedThisFrame() && canJump == true)
-        {
-            rb.linearVelocityY = (jumpHeight);
+            if (isClimbing && inputMovement.IsPressed() && inputClimb.IsPressed())
+            {
+                direction = inputMovement.ReadValue<Vector2>().normalized;
+                if (!isGrounded)
+                {
+                    rb.linearVelocityY = (direction.y * movementSpeed);
+                }
+                else
+                {
+                    rb.linearVelocityY = (direction.y * movementSpeed) * 2;
+                }
+
+            }
+
         }
 
         //animation
-        setAnimation(direction.x);
+        setAnimation(direction);
 
     }
 
@@ -80,28 +105,89 @@ public class PlayerMovement : MonoBehaviour
         if (collision.gameObject.CompareTag("Ground"))
         {
             canJump = true;
-            canDash =  true;
+            canDash = true;
+            isGrounded = true;
+        }
+
+        if (collision.gameObject.CompareTag("Walls") && inputClimb.WasPressedThisFrame() && isGrounded == false)
+        {
+            rb.gravityScale = 0;
+            isClimbing = true;
+
+            if (timerHold != null)
+            {
+                timerHold = StartCoroutine(holdTimer());
+            }
         }
     }
 
     private void OnCollisionExit2D(Collision2D collision)
     {
-        canJump = false;
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            canJump = false;
+        }
+
+        if (collision.gameObject.CompareTag("Walls"))
+        {
+            rb.gravityScale = 1;
+        }
     }
 
     private IEnumerator dashTimer()
     {
         isDashing = true;
+        trail.emitting = true;
         yield return new WaitForSeconds(dashTime);
+        trail.emitting = false;
         rb.linearVelocity = Vector2.zero;
         isDashing = false;
 
-        StopCoroutine(coroutine);
+        StopCoroutine(timerDash);
     }
 
-    private void setAnimation(float moveX)
+    private IEnumerator holdTimer()
     {
-        if (!canJump)
+        yield return new WaitForSecondsRealtime(climbTime);
+        rb.gravityScale = 1;
+        timerHold = null;
+
+        StopCoroutine(timerHold);
+    }
+
+
+
+    //---------------------------ANIMATIONs (made by the goat)--------------------------------------------
+    private void SwitchAnim()
+    {
+        isRight = !isRight;
+        Vector3 localScale = transform.localScale;
+        localScale.x *= -1f;
+        transform.localScale = localScale;
+    }
+    private void setAnimation(Vector2 direction)
+    {
+
+        if (direction.x > 0 && !isRight)
+        {
+            SwitchAnim();
+        }
+        else if (direction.x < 0 && isRight)
+        {
+            SwitchAnim();
+        }
+
+        if (isDashing)
+        {
+            animator.Play("Player_dash");
+
+        }
+        else if (isClimbing)
+        {
+            animator.Play("Player_climb");
+        }
+
+        else if (!canJump)
         {
             if (rb.linearVelocityY > 0)
             {
@@ -113,13 +199,18 @@ public class PlayerMovement : MonoBehaviour
 
             }
         }
-        else if (moveX==0) {
-
-            animator.Play("Player_idle");
-        }
-        else if (moveX > 0)
+        else
         {
-            animator.Play("Player_run");
+            if (direction.x == 0)
+            {
+
+                animator.Play("Player_idle");
+            }
+            else
+            {
+                animator.Play("Player_run");
+            }
         }
+        
     }
 }
