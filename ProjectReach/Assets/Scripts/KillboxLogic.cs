@@ -27,7 +27,7 @@ public class KillboxLogic : MonoBehaviour
             rigidbody.simulated = false;
         }
 
-        yield return new WaitForSeconds(3f);
+        yield return new WaitForSeconds(1f);
 
         if (player != null)
         {

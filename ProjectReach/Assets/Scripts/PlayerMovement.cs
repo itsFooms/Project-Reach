@@ -1,4 +1,5 @@
 using System.Collections;
+using UnityEditor.ShaderGraph.Internal;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -10,6 +11,8 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] float dashTime = 2f;
     [SerializeField] float climbTime = 4f;
     [SerializeField] private TrailRenderer trail;
+    [SerializeField] float fallMultiplier = 2.5f;
+    [SerializeField] float jumpMultiplier = 2f;
 
     private Animator animator;
     public Rigidbody2D rb;
@@ -66,7 +69,7 @@ public class PlayerMovement : MonoBehaviour
             //jump
             if (inputJump.WasPressedThisFrame() && canJump == true)
             {
-                rb.linearVelocityY = (jumpHeight);
+                rb.linearVelocity = (Vector2.up * jumpHeight);
             }
 
             //dash
@@ -91,6 +94,11 @@ public class PlayerMovement : MonoBehaviour
                     rb.linearVelocityY = (direction.y * movementSpeed) * 2;
                 }
 
+            }
+
+            if (rb.linearVelocity.y < 0)
+            {
+                rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
             }
 
         }
@@ -157,7 +165,7 @@ public class PlayerMovement : MonoBehaviour
 
 
 
-    //---------------------------ANIMATIONs (made by the goat)--------------------------------------------
+    //---------------------------ANIMATIONs (made by the goat)-------------------------------------------- type shit man
     private void SwitchAnim()
     {
         isRight = !isRight;
