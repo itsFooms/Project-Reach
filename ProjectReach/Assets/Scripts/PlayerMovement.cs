@@ -8,11 +8,15 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] float movementSpeed = 7f;
     [SerializeField] float jumpHeight = 20f;
     [SerializeField] float dashBoost = 50f;
+    [SerializeField] float slideSpeed = 2f;
+    [SerializeField] float climbSpeed = 4f;
+
     [SerializeField] float dashTime = 2f;
     [SerializeField] float climbTime = 4f;
-    [SerializeField] private TrailRenderer trail;
+    
     [SerializeField] float fallMultiplier = 2.5f;
     [SerializeField] float jumpMultiplier = 2f;
+    [SerializeField] private TrailRenderer trail;
 
     private Animator animator;
     public Rigidbody2D rb;
@@ -27,8 +31,10 @@ public class PlayerMovement : MonoBehaviour
     bool canDash = true;
     bool isDashing = false;
     bool isGrounded;
-    bool isClimbing;
+    bool canClimb = false;
+    bool onWall;
     bool isRight = true;
+    bool finished = true;
 
     Coroutine timerDash;
     Coroutine timerHold;
@@ -83,8 +89,8 @@ public class PlayerMovement : MonoBehaviour
                 rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (jumpMultiplier - 1) * Time.deltaTime;
             }
 
-                //dash
-                if (inputDash.WasPressedThisFrame() && canDash)
+            //dash
+            if (inputDash.WasPressedThisFrame() && canDash)
             {
                 canDash = false;
                 direction = (direction != Vector2.zero) ? direction : Vector2.right;
@@ -93,22 +99,27 @@ public class PlayerMovement : MonoBehaviour
                 timerDash = StartCoroutine(dashTimer());
             }
 
-            if (isClimbing && inputMovement.IsPressed() && inputClimb.IsPressed())
+
+            //Sliding and climbing 
+            if (onWall)
             {
-                direction = inputMovement.ReadValue<Vector2>().normalized;
-                if (!isGrounded)
+                if (onWall && inputClimb.IsPressed())
                 {
-                    rb.linearVelocityY = (direction.y * movementSpeed);
-                }
-                else
-                {
-                    rb.linearVelocityY = (direction.y * movementSpeed) * 2;
+                    if (finished) { timerHold = StartCoroutine(holdTimer()); } 
+
+                    if (canClimb)
+                    {
+                        rb.linearVelocity = new Vector2(rb.linearVelocityX, climbSpeed * inputMovement.ReadValue<Vector2>().y);
+                    }
+                    else { rb.linearVelocity = new Vector2(rb.linearVelocityX, -slideSpeed); }
+                    
                 }
 
+                else if (!canClimb)
+                {
+                    rb.linearVelocity = new Vector2(rb.linearVelocityX, -slideSpeed);
+                }
             }
-
-
-
         }
 
         //animation
@@ -125,15 +136,9 @@ public class PlayerMovement : MonoBehaviour
             isGrounded = true;
         }
 
-        if (collision.gameObject.CompareTag("Walls") && inputClimb.WasPressedThisFrame() && isGrounded == false)
+        if (collision.gameObject.CompareTag("Walls"))
         {
-            rb.gravityScale = 0;
-            isClimbing = true;
-
-            if (timerHold != null)
-            {
-                timerHold = StartCoroutine(holdTimer());
-            }
+            onWall = true; 
         }
     }
 
@@ -146,7 +151,7 @@ public class PlayerMovement : MonoBehaviour
 
         if (collision.gameObject.CompareTag("Walls"))
         {
-            rb.gravityScale = 1;
+            onWall = false;
         }
     }
 
@@ -164,9 +169,13 @@ public class PlayerMovement : MonoBehaviour
 
     private IEnumerator holdTimer()
     {
+        canClimb = true;
+        finished = false;
+
         yield return new WaitForSecondsRealtime(climbTime);
-        rb.gravityScale = 1;
-        timerHold = null;
+
+        canClimb = false;
+        finished = true;
 
         StopCoroutine(timerHold);
     }
@@ -198,7 +207,7 @@ public class PlayerMovement : MonoBehaviour
             animator.Play("Player_dash");
 
         }
-        else if (isClimbing)
+        else if (canClimb)
         {
             animator.Play("Player_climb");
         }
