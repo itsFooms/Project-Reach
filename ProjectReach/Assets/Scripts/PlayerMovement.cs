@@ -72,8 +72,19 @@ public class PlayerMovement : MonoBehaviour
                 rb.linearVelocity = (Vector2.up * jumpHeight);
             }
 
-            //dash
-            if (inputDash.WasPressedThisFrame() && canDash)
+            //Variable jump 
+
+            if (rb.linearVelocity.y < 0)
+            {
+                rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
+            }
+            else if (rb.linearVelocity.y > 0 && !inputJump.IsPressed())
+            {
+                rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (jumpMultiplier - 1) * Time.deltaTime;
+            }
+
+                //dash
+                if (inputDash.WasPressedThisFrame() && canDash)
             {
                 canDash = false;
                 direction = (direction != Vector2.zero) ? direction : Vector2.right;
@@ -96,10 +107,7 @@ public class PlayerMovement : MonoBehaviour
 
             }
 
-            if (rb.linearVelocity.y < 0)
-            {
-                rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
-            }
+
 
         }
 
