@@ -18,8 +18,18 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] float jumpMultiplier = 2f;
     [SerializeField] private TrailRenderer trail;
 
+
+    [SerializeField] Transform groundCheck;
+    [SerializeField] Transform wallCheck;
+    [SerializeField] LayerMask groundTile;
+    [SerializeField] LayerMask wallTile;
+    [SerializeField] float checkZone = 0.2f;
+
+
+
     private Animator animator;
     public Rigidbody2D rb;
+    private Collider2D colliderino;
 
     InputAction inputMovement;
     InputAction inputDash;
@@ -43,6 +53,7 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         animator = GetComponent<Animator>();
+        colliderino = GetComponent<Collider2D>();
         inputMovement = InputSystem.actions.FindAction("Move");
         inputJump = InputSystem.actions.FindAction("Jump");
         inputDash = InputSystem.actions.FindAction("Sprint");
@@ -51,13 +62,16 @@ public class PlayerMovement : MonoBehaviour
         inputMovement.Enable();
         inputJump.Enable();
         inputDash.Enable();
-        inputClimb.Enable(); //i felt like thhis could help
+        inputClimb.Enable();
 
     }
 
     // Update is called once per frame
     void Update()
     {
+
+        CheckEnvironnement();
+
         if (!isDashing)
         {
             //deplacement
@@ -79,14 +93,16 @@ public class PlayerMovement : MonoBehaviour
             }
 
             //Variable jump 
-
-            if (rb.linearVelocity.y < 0)
+            if (!onWall)
             {
-                rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
-            }
-            else if (rb.linearVelocity.y > 0 && !inputJump.IsPressed())
-            {
-                rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (jumpMultiplier - 1) * Time.deltaTime;
+                if (rb.linearVelocity.y < 0)
+                {
+                    rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (fallMultiplier - 1) * Time.deltaTime;
+                }
+                else if (rb.linearVelocity.y > 0 && !inputJump.IsPressed())
+                {
+                    rb.linearVelocity += Vector2.up * Physics2D.gravity.y * (jumpMultiplier - 1) * Time.deltaTime;
+                }
             }
 
             //dash
@@ -103,13 +119,13 @@ public class PlayerMovement : MonoBehaviour
             //Sliding and climbing 
             if (onWall)
             {
-                if (onWall && inputClimb.IsPressed())
+                if (inputClimb.IsPressed())
                 {
                     if (finished) { timerHold = StartCoroutine(holdTimer()); } 
 
                     if (canClimb)
                     {
-                        rb.linearVelocity = new Vector2(rb.linearVelocityX, climbSpeed * inputMovement.ReadValue<Vector2>().y);
+                        rb.linearVelocity = new Vector2(0, climbSpeed * inputMovement.ReadValue<Vector2>().y);
                     }
                     else { rb.linearVelocity = new Vector2(rb.linearVelocityX, -slideSpeed); }
                     
@@ -126,7 +142,21 @@ public class PlayerMovement : MonoBehaviour
         setAnimation(direction);
 
     }
+    private void CheckEnvironnement()
+    {
+        isGrounded = Physics2D.OverlapCircle(groundCheck.position, checkZone, groundTile);
+        onWall = Physics2D.OverlapCircle(wallCheck.position, checkZone, wallTile) && !isGrounded;
 
+        if (isGrounded)
+        {
+            canJump = true;
+            canDash = true;
+        }
+        else
+        {
+            canJump = false;
+        }
+    }
     private void OnCollisionEnter2D(Collision2D collision) //empeche le saut et dash a l'infini
     {
         if (collision.gameObject.CompareTag("Ground"))
@@ -207,9 +237,16 @@ public class PlayerMovement : MonoBehaviour
             animator.Play("Player_dash");
 
         }
-        else if (canClimb)
+        else if (onWall && !isGrounded)
         {
-            animator.Play("Player_climb");
+            if(canClimb && direction.y > 0)
+            {
+                animator.Play("Player_climb");
+            }
+            else
+            {
+                animator.Play("Player_slidewall");
+            }
         }
 
         else if (!canJump)
