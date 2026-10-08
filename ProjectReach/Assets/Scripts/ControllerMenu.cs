@@ -6,7 +6,7 @@ public class ControllerMenu : MonoBehaviour
 {
     public void ChargerJeu()
     {
-        SceneManager.LoadScene("SampleScene");
+        SceneManager.LoadScene("Game");
     }
 
     public void Quitter()
