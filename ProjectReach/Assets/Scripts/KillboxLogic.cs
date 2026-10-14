@@ -3,10 +3,14 @@ using UnityEngine;
 
 public class KillboxLogic : MonoBehaviour
 {
-    [SerializeField]
-    private Vector2 spawnPosition = new Vector2(-10f, -4f);
+    //[SerializeField] private Vector2 spawnPosition = new Vector2(-10f, -4f);
 
+    GameObject respawnPoint;
 
+    private void Start()
+    {
+        respawnPoint = GameObject.FindWithTag("Respawn");
+    }
 
 
     private void OnTriggerEnter2D(Collider2D collision)
@@ -31,7 +35,7 @@ public class KillboxLogic : MonoBehaviour
 
         if (player != null)
         {
-            player.transform.position = spawnPosition;
+            player.transform.position = respawnPoint.transform.position;
         }
 
         if (rigidbody != null)
