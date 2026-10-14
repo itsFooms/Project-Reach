@@ -3,9 +3,8 @@ using UnityEngine;
 
 public class KillboxLogic : MonoBehaviour
 {
-    //[SerializeField] private Vector2 spawnPosition = new Vector2(-10f, -4f);
 
-    GameObject respawnPoint;
+    private GameObject respawnPoint;
 
     private void Start()
     {
