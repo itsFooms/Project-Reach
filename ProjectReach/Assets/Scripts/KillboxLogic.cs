@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class KillboxLogic : MonoBehaviour
 {
-
+    [SerializeField] private GameObject deathPrefab;
     private GameObject respawnPoint;
 
     private void Start()
@@ -16,6 +16,10 @@ public class KillboxLogic : MonoBehaviour
     {
         if (collision.CompareTag("Player"))
         {
+            if (deathPrefab != null)
+            {
+                Instantiate(deathPrefab, collision.transform.position, Quaternion.identity);
+            }
             StartCoroutine(Respawn(collision.gameObject));
         }
     }

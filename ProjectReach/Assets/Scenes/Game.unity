@@ -136,6 +136,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0472f42814cf29f4286c2432f4377a8e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KillboxLogic
+  deathPrefab: {fileID: 1752036728402365877, guid: 81122079045e5d342bc6ff6610408be5, type: 3}
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
@@ -6750,7 +6751,7 @@ TrailRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Time: 0.5
-  m_PreviewTimeScale: 1
+  m_PreviewTimeScale: 0
   m_Parameters:
     serializedVersion: 3
     widthMultiplier: 1
@@ -7647,6 +7648,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0472f42814cf29f4286c2432f4377a8e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::KillboxLogic
+  deathPrefab: {fileID: 1752036728402365877, guid: 81122079045e5d342bc6ff6610408be5, type: 3}
 --- !u!1 &1737114020
 GameObject:
   m_ObjectHideFlags: 0
