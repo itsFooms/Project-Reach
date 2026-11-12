@@ -117,10 +117,8 @@ public class PlayerMovement : MonoBehaviour
 
 
             //Sliding and climbing 
-            if (onWall)
+            if (onWall && inputClimb.IsPressed())
             {
-                if (inputClimb.IsPressed())
-                {
                     if (finished) { timerHold = StartCoroutine(holdTimer()); } 
 
                     if (canClimb)
@@ -129,12 +127,6 @@ public class PlayerMovement : MonoBehaviour
                     }
                     else { rb.linearVelocity = new Vector2(rb.linearVelocityX, -slideSpeed); }
                     
-                }
-
-                else if (!canClimb)
-                {
-                    rb.linearVelocity = new Vector2(rb.linearVelocityX, -slideSpeed);
-                }
             }
         }
 
@@ -177,6 +169,7 @@ public class PlayerMovement : MonoBehaviour
         if (collision.gameObject.CompareTag("Ground"))
         {
             canJump = false;
+            canClimb = true;
         }
 
         if (collision.gameObject.CompareTag("Walls"))
@@ -199,13 +192,11 @@ public class PlayerMovement : MonoBehaviour
 
     private IEnumerator holdTimer()
     {
-        canClimb = true;
         finished = false;
-
         yield return new WaitForSecondsRealtime(climbTime);
 
-        canClimb = false;
         finished = true;
+        canClimb = false;
 
         StopCoroutine(timerHold);
     }
