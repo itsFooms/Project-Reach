@@ -17,9 +17,4 @@ public class ControllerMenu : MonoBehaviour
         Application.Quit();
 #endif
     }
-
-    public void GoTolevelSelector()
-    {
-        SceneManager.LoadScene("LevelSelector");
-    }
 }
