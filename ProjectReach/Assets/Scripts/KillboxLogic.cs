@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class KillboxLogic : MonoBehaviour
 {
-
+    [SerializeField] private GameObject deathPrefab;
     private GameObject respawnPoint;
 
     private void Start()
@@ -16,6 +16,10 @@ public class KillboxLogic : MonoBehaviour
     {
         if (collision.CompareTag("Player"))
         {
+            if (deathPrefab != null)
+            {
+                Instantiate(deathPrefab, collision.transform.position, Quaternion.identity);
+            }
             StartCoroutine(Respawn(collision.gameObject));
         }
     }
@@ -23,18 +27,25 @@ public class KillboxLogic : MonoBehaviour
     private IEnumerator Respawn(GameObject player)
     {
         Rigidbody2D rigidbody = player.GetComponent<Rigidbody2D>();
+        SpriteRenderer spriteRenderer = player.GetComponent<SpriteRenderer>();
+        PlayerMovement movement = player.GetComponent<PlayerMovement>();
 
         if (rigidbody != null)
         {
             rigidbody.linearVelocity = Vector2.zero;
             rigidbody.simulated = false;
         }
+        if(spriteRenderer != null) { spriteRenderer.enabled = false; }
+        if(movement != null) {  movement.enabled = false; }
 
         yield return new WaitForSeconds(1f);
 
         if (player != null)
         {
             player.transform.position = respawnPoint.transform.position;
+            if (spriteRenderer != null) { spriteRenderer.enabled = true; }
+            if (movement != null) { movement.enabled = true; }
+
         }
 
         if (rigidbody != null)
