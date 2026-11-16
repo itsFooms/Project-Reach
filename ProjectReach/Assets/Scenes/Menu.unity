@@ -205,7 +205,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1728228546}
         m_TargetAssemblyTypeName: ControllerMenu, Assembly-CSharp
-        m_MethodName: NiveauScreen
+        m_MethodName: GoTolevelSelector
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
